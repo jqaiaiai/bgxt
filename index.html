@@ -1,0 +1,3669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医院特殊管理药品处方点评综合系统 v2.0 - 完整版</title>
+    
+    <!-- 引入核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        /* ==================== 🎨 界面美化 - 现代化设计 ==================== */
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1::before {
+            content: "🏥";
+            font-size: 32px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px 20px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            min-width: 100px;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        .stat-item .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* 系统标签页 */
+        .system-tabs {
+            display: flex;
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--gray-600);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background: var(--gray-100);
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .toolbar-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .toolbar-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .toolbar-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 14px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-info {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0891b2;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 输入框样式 */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="search"],
+        input[type="date"],
+        select {
+            padding: 10px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-input {
+            width: 200px;
+        }
+
+        /* 文件上传区域 */
+        .file-upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--gray-50);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary-color);
+            background: #dbeafe;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: var(--gray-600);
+            font-size: 14px;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+
+        /* 表格区域 */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gray-800);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--gray-200);
+            text-align: center;
+        }
+
+        tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .sidebar-card h3 {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gray-800);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--gray-50);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: var(--gray-600);
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-card .trend {
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--danger-color);
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 15px;
+        }
+
+        /* 报告预览 */
+        .report-preview {
+            background: var(--gray-50);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* 列映射配置 */
+        .mapping-config {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .mapping-config.show {
+            display: block;
+        }
+
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .mapping-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .mapping-item label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        /* 多选下拉框 */
+        .multiselect {
+            position: relative;
+            width: 250px;
+        }
+
+        .multiselect-trigger {
+            padding: 10px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+
+        .multiselect-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            margin-top: 5px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .multiselect-dropdown.show {
+            display: block;
+        }
+
+        .multiselect-search {
+            padding: 10px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .multiselect-options {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .multiselect-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .multiselect-option:hover {
+            background: var(--gray-100);
+        }
+
+        .multiselect-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid white;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast 通知 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+        }
+
+        .toast {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-xl);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--info-color);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-stats {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .system-tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .toolbar-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .header,
+            .system-tabs,
+            .toolbar,
+            .sidebar {
+                display: none !important;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            table {
+                font-size: 10px;
+            }
+        }
+
+        /* 暗色主题 */
+        .dark-mode {
+            --gray-50: #1f2937;
+            --gray-100: #374151;
+            --gray-200: #4b5563;
+            --gray-300: #6b7280;
+            --gray-600: #9ca3af;
+            --gray-700: #d1d5db;
+            --gray-800: #e5e7eb;
+            --gray-900: #f9fafb;
+        }
+
+        .dark-mode body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            color: var(--gray-800);
+        }
+
+        .dark-mode .header,
+        .dark-mode .system-tabs,
+        .dark-mode .toolbar,
+        .dark-mode .table-container,
+        .dark-mode .sidebar-card {
+            background: var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        .dark-mode input,
+        .dark-mode select {
+            background: var(--gray-100);
+            color: var(--gray-800);
+            border-color: var(--gray-300);
+        }
+
+        /* 快捷键提示 */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .keyboard-hint.show {
+            display: block;
+        }
+
+        .keyboard-hint kbd {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+
+        /* 系统B专用样式 - 经典纯净版 */
+        .sys-b-table th {
+            background: #4a5568;
+        }
+
+        /* 系统C专用样式 - 抗菌药物版 */
+        .sys-c-table th {
+            background: #059669;
+        }
+
+        .antibiotic-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .antibiotic-yes {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .antibiotic-no {
+            background: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <h1>医院特殊管理药品处方点评系统 <span style="font-size: 14px; color: var(--gray-600); font-weight: normal;">v2.0 完整版</span></h1>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="label">总处方数</div>
+                    <div class="value" id="total-prescriptions">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">合理处方</div>
+                    <div class="value" id="valid-prescriptions" style="color: var(--success-color);">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">不合理处方</div>
+                    <div class="value" id="invalid-prescriptions" style="color: var(--danger-color);">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">合格率</div>
+                    <div class="value" id="pass-rate">0%</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 系统标签页 -->
+        <div class="system-tabs">
+            <button class="tab-btn active" onclick="switchSystem('sys-a')">
+                <span>✨</span> 精麻药品点评
+            </button>
+            <button class="tab-btn" onclick="switchSystem('sys-b')">
+                <span>📋</span> 经典纯净版
+            </button>
+            <button class="tab-btn" onclick="switchSystem('sys-c')">
+                <span>🦠</span> 抗菌药物点评
+            </button>
+            <button class="tab-btn" onclick="switchSystem('sys-d')">
+                <span>📊</span> 报告生成器
+            </button>
+            <button class="tab-btn" onclick="switchSystem('sys-e')">
+                <span>📈</span> 数据分析
+            </button>
+        </div>
+
+        <!-- ==================== 系统A：精麻药品点评（自动小结版） ==================== -->
+        <div id="sys-a" class="tab-content active">
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📁 数据导入：</span>
+                    <div class="file-upload-area" id="file-drop-zone-a" onclick="document.getElementById('file-input-a').click()">
+                        <div class="file-upload-icon">📤</div>
+                        <div class="file-upload-text">点击或拖拽上传Excel文件（支持多选）</div>
+                        <input type="file" id="file-input-a" accept=".xlsx,.xls,.csv" multiple style="display: none;" onchange="SysA.handleFiles(this)">
+                    </div>
+                    <span id="file-status-a" style="color: var(--gray-600); font-size: 13px;"></span>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">🔍 快速筛选：</span>
+                    <div class="input-group">
+                        <input type="search" class="search-input" id="search-doctor-a" placeholder="搜索医生姓名..." oninput="SysA.filterData()">
+                        <input type="search" class="search-input" id="search-prescription-a" placeholder="搜索处方号..." oninput="SysA.filterData()">
+                        <input type="search" class="search-input" id="search-diagnosis-a" placeholder="搜索诊断..." oninput="SysA.filterData()">
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">💊 药品筛选：</span>
+                    <div class="multiselect" id="drug-multiselect-a">
+                        <div class="multiselect-trigger" onclick="SysA.toggleDrugDropdown()">
+                            <span id="drug-selected-text-a">选择药品...</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="drug-dropdown-a">
+                            <div class="multiselect-search">
+                                <input type="search" placeholder="搜索药品..." oninput="SysA.filterDrugOptions(this.value)">
+                            </div>
+                            <div class="multiselect-options" id="drug-options-a"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📅 月份：</span>
+                    <input type="text" id="month-input-a" value="2026/5" style="width: 80px;" oninput="SysA.updateMonth()">
+                </div>
+
+                <div class="toolbar-section" style="margin-left: auto;">
+                    <button class="btn btn-primary" onclick="SysA.exportExcel()">
+                        <span>📊</span> 导出Excel
+                    </button>
+                    <button class="btn btn-success" onclick="SysA.exportPDF()">
+                        <span>📄</span> 导出PDF
+                    </button>
+                    <button class="btn btn-info" onclick="window.print()">
+                        <span>🖨️</span> 打印
+                    </button>
+                    <button class="btn btn-danger" onclick="SysA.clearData()">
+                        <span>🧹</span> 清空数据
+                    </button>
+                </div>
+            </div>
+
+            <!-- 列映射配置 -->
+            <div class="mapping-config" id="mapping-config-a">
+                <div style="margin-bottom: 15px; font-weight: bold; color: var(--warning-color);">
+                    💡 请手动指定Excel列对应关系：
+                </div>
+                <div class="mapping-grid" id="mapping-grid-a"></div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="SysA.applyMapping()">应用映射</button>
+                    <button class="btn btn-outline" onclick="SysA.autoDetectMapping()">自动检测</button>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- 表格区域 -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title" id="table-title-a">精麻特殊管理药品处方点评总表（自动小结版）</div>
+                        <div>
+                            <button class="btn btn-outline" onclick="SysA.toggleTheme()">
+                                <span>🌙</span> 切换主题
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="main-table-a">
+                            <thead>
+                                <tr>
+                                    <th style="width: 4%;">序号</th>
+                                    <th style="width: 8%;">处方日期</th>
+                                    <th style="width: 10%;">病历号</th>
+                                    <th style="width: 5%;">年龄</th>
+                                    <th style="width: 12%;">诊断</th>
+                                    <th style="width: 5%;">品种数</th>
+                                    <th style="width: 6%;">剂型</th>
+                                    <th style="width: 15%;">药品名称</th>
+                                    <th style="width: 7%;">金额(元)</th>
+                                    <th style="width: 7%;">处方医生</th>
+                                    <th style="width: 7%;">审核药师</th>
+                                    <th style="width: 7%;">发药药师</th>
+                                    <th style="width: 7%;">是否合理</th>
+                                    <th style="width: 15%;">问题分析</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-a">
+                                <tr>
+                                    <td colspan="14" style="padding: 40px; color: var(--gray-600);">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                            <div>暂无数据，请先导入Excel文件</div>
+                                            <div style="font-size: 12px; margin-top: 10px; color: var(--gray-600);">
+                                                支持格式：.xlsx, .xls, .csv
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 侧边栏 -->
+                <div class="sidebar">
+                    <!-- 统计卡片 -->
+                    <div class="sidebar-card">
+                        <h3><span>📊</span> 实时统计</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="label">总处方数</div>
+                                <div class="value" id="stat-total-a">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">合理处方</div>
+                                <div class="value" id="stat-valid-a" style="color: var(--success-color);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">不合理处方</div>
+                                <div class="value" id="stat-invalid-a" style="color: var(--danger-color);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">合格率</div>
+                                <div class="value" id="stat-rate-a">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图表 -->
+                    <div class="sidebar-card">
+                        <h3><span>📈</span> 处方分布</h3>
+                        <div class="chart-container">
+                            <canvas id="distribution-chart-a"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 报告预览 -->
+                    <div class="sidebar-card">
+                        <h3><span>📋</span> 点评小结预览</h3>
+                        <div class="report-preview" id="report-preview-a">
+                            等待数据加载...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 系统B：经典纯净版 ==================== -->
+        <div id="sys-b" class="tab-content">
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📁 数据导入：</span>
+                    <div class="file-upload-area" id="file-drop-zone-b" onclick="document.getElementById('file-input-b').click()">
+                        <div class="file-upload-icon">📤</div>
+                        <div class="file-upload-text">点击或拖拽上传Excel文件（支持多选）</div>
+                        <input type="file" id="file-input-b" accept=".xlsx,.xls,.csv" multiple style="display: none;" onchange="SysB.handleFiles(this)">
+                    </div>
+                    <span id="file-status-b" style="color: var(--gray-600); font-size: 13px;"></span>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">🔍 快速筛选：</span>
+                    <div class="input-group">
+                        <input type="search" class="search-input" id="search-doctor-b" placeholder="搜索医生姓名..." oninput="SysB.filterData()">
+                        <input type="search" class="search-input" id="search-prescription-b" placeholder="搜索处方号..." oninput="SysB.filterData()">
+                        <input type="search" class="search-input" id="search-diagnosis-b" placeholder="搜索诊断..." oninput="SysB.filterData()">
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">💊 药品筛选：</span>
+                    <div class="multiselect" id="drug-multiselect-b">
+                        <div class="multiselect-trigger" onclick="SysB.toggleDrugDropdown()">
+                            <span id="drug-selected-text-b">选择药品...</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="drug-dropdown-b">
+                            <div class="multiselect-search">
+                                <input type="search" placeholder="搜索药品..." oninput="SysB.filterDrugOptions(this.value)">
+                            </div>
+                            <div class="multiselect-options" id="drug-options-b"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📅 月份：</span>
+                    <input type="text" id="month-input-b" value="2026/5" style="width: 80px;" oninput="SysB.updateMonth()">
+                </div>
+
+                <div class="toolbar-section" style="margin-left: auto;">
+                    <button class="btn btn-primary" onclick="SysB.exportExcel()">
+                        <span>📊</span> 导出Excel
+                    </button>
+                    <button class="btn btn-success" onclick="SysB.exportPDF()">
+                        <span>📄</span> 导出PDF
+                    </button>
+                    <button class="btn btn-info" onclick="window.print()">
+                        <span>🖨️</span> 打印
+                    </button>
+                    <button class="btn btn-danger" onclick="SysB.clearData()">
+                        <span>🧹</span> 清空数据
+                    </button>
+                </div>
+            </div>
+
+            <!-- 列映射配置 -->
+            <div class="mapping-config" id="mapping-config-b">
+                <div style="margin-bottom: 15px; font-weight: bold; color: var(--warning-color);">
+                    💡 请手动指定Excel列对应关系：
+                </div>
+                <div class="mapping-grid" id="mapping-grid-b"></div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="SysB.applyMapping()">应用映射</button>
+                    <button class="btn btn-outline" onclick="SysB.autoDetectMapping()">自动检测</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="table-title" id="table-title-b">精麻特殊管理药品处方点评总表（经典纯净版）</div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="main-table-b" class="sys-b-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%;">序号</th>
+                                <th style="width: 8%;">处方日期</th>
+                                <th style="width: 10%;">病历号</th>
+                                <th style="width: 5%;">年龄</th>
+                                <th style="width: 12%;">诊断</th>
+                                <th style="width: 5%;">品种数</th>
+                                <th style="width: 6%;">剂型</th>
+                                <th style="width: 15%;">药品名称</th>
+                                <th style="width: 7%;">金额(元)</th>
+                                <th style="width: 7%;">处方医生</th>
+                                <th style="width: 7%;">审核药师</th>
+                                <th style="width: 7%;">发药药师</th>
+                                <th style="width: 7%;">是否合理</th>
+                                <th style="width: 15%;">问题分析</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-b">
+                            <tr>
+                                <td colspan="14" style="padding: 40px; color: var(--gray-600);">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                        <div>暂无数据，请先导入Excel文件</div>
+                                        <div style="font-size: 12px; margin-top: 10px; color: var(--gray-600);">
+                                            经典纯净版 - 简洁高效的处方点评工具
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 系统C：抗菌药物点评 ==================== -->
+        <div id="sys-c" class="tab-content">
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📁 数据导入：</span>
+                    <div class="file-upload-area" id="file-drop-zone-c" onclick="document.getElementById('file-input-c').click()">
+                        <div class="file-upload-icon">📤</div>
+                        <div class="file-upload-text">点击或拖拽上传抗菌药物Excel文件</div>
+                        <input type="file" id="file-input-c" accept=".xlsx,.xls,.csv" multiple style="display: none;" onchange="SysC.handleFiles(this)">
+                    </div>
+                    <span id="file-status-c" style="color: var(--gray-600); font-size: 13px;"></span>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">🔍 快速筛选：</span>
+                    <div class="input-group">
+                        <input type="search" class="search-input" id="search-doctor-c" placeholder="搜索医生姓名..." oninput="SysC.filterData()">
+                        <input type="search" class="search-input" id="search-prescription-c" placeholder="搜索处方号..." oninput="SysC.filterData()">
+                        <input type="search" class="search-input" id="search-diagnosis-c" placeholder="搜索诊断..." oninput="SysC.filterData()">
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">💊 抗菌药物筛选：</span>
+                    <div class="multiselect" id="drug-multiselect-c">
+                        <div class="multiselect-trigger" onclick="SysC.toggleDrugDropdown()">
+                            <span id="drug-selected-text-c">选择抗菌药物...</span>
+                            <span>▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="drug-dropdown-c">
+                            <div class="multiselect-search">
+                                <input type="search" placeholder="搜索抗菌药物..." oninput="SysC.filterDrugOptions(this.value)">
+                            </div>
+                            <div class="multiselect-options" id="drug-options-c"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-section">
+                    <span class="toolbar-label">📅 月份：</span>
+                    <input type="text" id="month-input-c" value="2026/5" style="width: 80px;" oninput="SysC.updateMonth()">
+                </div>
+
+                <div class="toolbar-section" style="margin-left: auto;">
+                    <button class="btn btn-primary" onclick="SysC.exportExcel()">
+                        <span>📊</span> 导出Excel
+                    </button>
+                    <button class="btn btn-success" onclick="SysC.exportPDF()">
+                        <span>📄</span> 导出PDF
+                    </button>
+                    <button class="btn btn-info" onclick="window.print()">
+                        <span>🖨️</span> 打印
+                    </button>
+                    <button class="btn btn-danger" onclick="SysC.clearData()">
+                        <span>🧹</span> 清空数据
+                    </button>
+                </div>
+            </div>
+
+            <!-- 列映射配置 -->
+            <div class="mapping-config" id="mapping-config-c">
+                <div style="margin-bottom: 15px; font-weight: bold; color: var(--warning-color);">
+                    💡 请手动指定Excel列对应关系：
+                </div>
+                <div class="mapping-grid" id="mapping-grid-c"></div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="SysC.applyMapping()">应用映射</button>
+                    <button class="btn btn-outline" onclick="SysC.autoDetectMapping()">自动检测</button>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- 表格区域 -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title" id="table-title-c">抗菌药物处方点评表</div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="main-table-c" class="sys-c-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">序号</th>
+                                    <th style="width: 10%;">处方日期</th>
+                                    <th style="width: 12%;">处方号</th>
+                                    <th style="width: 10%;">医生姓名</th>
+                                    <th style="width: 15%;">诊断</th>
+                                    <th style="width: 18%;">抗菌药物名称</th>
+                                    <th style="width: 8%;">是否联合用药</th>
+                                    <th style="width: 8%;">是否合理</th>
+                                    <th style="width: 12%;">不合理情况</th>
+                                    <th style="width: 12%;">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body-c">
+                                <tr>
+                                    <td colspan="10" style="padding: 40px; color: var(--gray-600);">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 48px; margin-bottom: 10px;">🦠</div>
+                                            <div>暂无数据，请先导入抗菌药物Excel文件</div>
+                                            <div style="font-size: 12px; margin-top: 10px; color: var(--gray-600);">
+                                                专业的抗菌药物处方点评工具
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 侧边栏 -->
+                <div class="sidebar">
+                    <!-- 统计卡片 -->
+                    <div class="sidebar-card">
+                        <h3><span>📊</span> 抗菌药物统计</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="label">总处方数</div>
+                                <div class="value" id="stat-total-c">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">抗菌药物处方</div>
+                                <div class="value" id="stat-antibiotic-c" style="color: var(--warning-color);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">合理处方</div>
+                                <div class="value" id="stat-valid-c" style="color: var(--success-color);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">使用率</div>
+                                <div class="value" id="stat-rate-c">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图表 -->
+                    <div class="sidebar-card">
+                        <h3><span>📈</span> 抗菌药物分布</h3>
+                        <div class="chart-container">
+                            <canvas id="distribution-chart-c"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 抗菌药物使用排行 -->
+                    <div class="sidebar-card">
+                        <h3><span>💊</span> 抗菌药物使用排行</h3>
+                        <div id="antibiotic-ranking-c" style="max-height: 200px; overflow-y: auto;">
+                            <div style="text-align: center; color: var(--gray-600); padding: 20px;">
+                                等待数据加载...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 系统D：报告生成器 ==================== -->
+        <div id="sys-d" class="tab-content">
+            <div class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">处方点评报告生成器</div>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div class="toolbar-section">
+                            <span class="toolbar-label">📅 报告期：</span>
+                            <input type="number" id="report-year" value="2026" style="width: 80px;">
+                            <span>年</span>
+                            <input type="number" id="report-month" value="5" style="width: 60px;">
+                            <span>月</span>
+                        </div>
+
+                        <h3 style="margin: 20px 0 15px 0;">📊 基本数据</h3>
+                        <div class="stats-grid" style="margin-bottom: 20px;">
+                            <div class="stat-card">
+                                <div class="label">西药处方数</div>
+                                <input type="number" id="v1" value="100" style="width: 100%; text-align: center;">
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">中药处方数</div>
+                                <input type="number" id="v2" value="50" style="width: 100%; text-align: center;">
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">麻精处方数</div>
+                                <input type="number" id="v3" value="10" style="width: 100%; text-align: center;">
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">平均品种数</div>
+                                <input type="number" id="v4" value="2.3" step="0.1" style="width: 100%; text-align: center;">
+                            </div>
+                        </div>
+
+                        <h3 style="margin: 20px 0 15px 0;">⚠️ 不合格处方统计</h3>
+                        <table style="margin-bottom: 20px;">
+                            <thead>
+                                <tr>
+                                    <th>代码</th>
+                                    <th>问题描述</th>
+                                    <th>数量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="error-table-body">
+                                <!-- 动态生成 -->
+                            </tbody>
+                        </table>
+
+                        <button class="btn btn-primary" onclick="SysD.generateReport()">
+                            <span>🔄</span> 生成报告
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+                    <div class="sidebar-card">
+                        <h3><span>👁️</span> 报告预览</h3>
+                        <div class="report-preview" id="report-preview-d">
+                            点击"生成报告"按钮查看预览...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 系统E：数据分析 ==================== -->
+        <div id="sys-e" class="tab-content">
+            <div class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">数据分析中心</div>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div class="stats-grid" style="margin-bottom: 30px;">
+                            <div class="stat-card">
+                                <div class="label">本月处方总数</div>
+                                <div class="value" id="analysis-total">0</div>
+                                <div class="trend trend-up">↑ 12% 较上月</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">平均处方金额</div>
+                                <div class="value" id="analysis-amount">¥0</div>
+                                <div class="trend trend-down">↓ 5% 较上月</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">抗菌药物使用率</div>
+                                <div class="value" id="analysis-antibiotic">0%</div>
+                                <div class="trend trend-up">↑ 2% 较上月</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="label">处方合格率</div>
+                                <div class="value" id="analysis-passrate">0%</div>
+                                <div class="trend trend-up">↑ 3% 较上月</div>
+                            </div>
+                        </div>
+
+                        <h3 style="margin: 20px 0 15px 0;">📊 趋势分析</h3>
+                        <div style="height: 300px; margin-bottom: 30px;">
+                            <canvas id="trend-chart"></canvas>
+                        </div>
+
+                        <h3 style="margin: 20px 0 15px 0;">🏥 医生处方排行</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>医生姓名</th>
+                                    <th>处方数</th>
+                                    <th>合格率</th>
+                                    <th>平均金额</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctor-ranking">
+                                <!-- 动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div style="text-align: center; color: white;">
+            <div class="loading-spinner"></div>
+            <div style="margin-top: 20px; font-size: 16px;">正在处理数据...</div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- 快捷键提示 -->
+    <div class="keyboard-hint" id="keyboard-hint">
+        <kbd>Ctrl</kbd> + <kbd>S</kbd> 保存 | <kbd>Ctrl</kbd> + <kbd>E</kbd> 导出Excel | <kbd>Ctrl</kbd> + <kbd>P</kbd> 打印 | <kbd>Esc</kbd> 关闭弹窗
+    </div>
+
+    <script>
+        // ==================== 🎯 全局配置与工具函数 ====================
+        
+        // 精麻药品关键词
+        const PSYCHOTROPIC_KEYWORDS = [
+            '艾司唑仑', '吗啡', '曲马多', '地西泮', '阿普唑仑', 
+            '佐匹克隆', '右佐匹克隆', '唑吡坦', '芬太尼', '哌替啶', 
+            '羟考酮', '布桂嗪', '咪达唑仑', '氯胺酮', '美沙酮', 
+            '双氢可待因', '可待因', '哌甲酯', '丁丙诺啡', '瑞芬太尼'
+        ];
+
+        // 抗菌药物关键词
+        const ANTIBIOTIC_KEYWORDS = [
+            '青霉素', '阿莫西林', '氨苄西林', '苯唑西林', '氯唑西林',
+            '头孢', '头孢氨苄', '头孢拉定', '头孢克洛', '头孢呋辛',
+            '头孢曲松', '头孢他啶', '头孢哌酮', '头孢吡肟',
+            '红霉素', '阿奇霉素', '克拉霉素', '罗红霉素',
+            '左氧氟沙星', '莫西沙星', '环丙沙星', '诺氟沙星',
+            '庆大霉素', '阿米卡星', '链霉素',
+            '四环素', '多西环素', '米诺环素',
+            '克林霉素', '林可霉素',
+            '甲硝唑', '替硝唑', '奥硝唑',
+            '磺胺', '复方新诺明',
+            '万古霉素', '去甲万古霉素', '替考拉宁',
+            '利奈唑胺', '达托霉素',
+            '多粘菌素', '粘菌素',
+            '亚胺培南', '美罗培南', '帕尼培南',
+            '氨曲南', '厄他培南',
+            '大环内酯', '喹诺酮', '氨基糖苷', '糖肽'
+        ];
+
+        // 不合格处方类型
+        const ERROR_TYPES = [
+            { code: '1-1', desc: '处方缺项/字迹难以辨认' },
+            { code: '1-2', desc: '医师签名不规范或不一致' },
+            { code: '1-3', desc: '药师未进行适宜性审核/无双签名' },
+            { code: '1-4', desc: '新生儿、婴幼儿处方未写明日、月龄' },
+            { code: '1-5', desc: '西药、中成药与中药饮片未分别开具' },
+            { code: '1-6', desc: '未使用药品规范名称开具处方' },
+            { code: '1-7', desc: '剂量、规格、数量、单位书写不规范' },
+            { code: '1-8', desc: '用法用量使用"遵医嘱"等模糊字句' },
+            { code: '1-9', desc: '修改未签名日期/超量无原因签名' },
+            { code: '1-10', desc: '未写临床诊断或书写不全' },
+            { code: '1-11', desc: '单张门急诊处方超过五种药品' },
+            { code: '1-12', desc: '超量用药未注明理由' },
+            { code: '1-13', desc: '特殊管理药品处方未执行特殊规定' },
+            { code: '1-14', desc: '未按抗菌药物临床应用规定开具' },
+            { code: '1-15', desc: '中药饮片未按顺序排列或未标特殊要求' },
+            { code: '2-1', desc: '适应症不适宜' },
+            { code: '2-2', desc: '遴选药品不适宜' },
+            { code: '2-3', desc: '药品剂型或给药途径不适宜' },
+            { code: '2-4', desc: '无正当理由不首选国家基本药物' },
+            { code: '2-5', desc: '用法、用量不适宜' },
+            { code: '2-6', desc: '联合用药不适宜' },
+            { code: '2-7', desc: '重复给药' },
+            { code: '2-8', desc: '有配伍禁忌或者不良相互作用' },
+            { code: '2-9', desc: '其它用药不适宜情况' },
+            { code: '3-1', desc: '无适应症用药' },
+            { code: '3-2', desc: '无正当理由开具高价药' },
+            { code: '3-3', desc: '无正当理由超说明书用药' },
+            { code: '3-4', desc: '同时开具2种以上药理作用相同药物' }
+        ];
+
+        // Toast 通知系统
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 显示/隐藏加载遮罩
+        function showLoading(show = true) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.toggle('show', show);
+        }
+
+        // 系统切换
+        function switchSystem(sysId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-btn').classList.add('active');
+            document.getElementById(sysId).classList.add('active');
+            
+            // 切换系统时初始化对应数据
+            if (sysId === 'sys-e') {
+                SysE.initCharts();
+            }
+        }
+
+        // 快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // 显示快捷键提示
+            if (e.ctrlKey) {
+                document.getElementById('keyboard-hint').classList.add('show');
+            }
+            
+            // Ctrl+S - 保存
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                showToast('数据已保存到本地缓存', 'success');
+                SysA.saveToCache();
+                SysB.saveToCache();
+                SysC.saveToCache();
+            }
+            
+            // Ctrl+E - 导出Excel
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                const activeTab = document.querySelector('.tab-content.active').id;
+                if (activeTab === 'sys-a') SysA.exportExcel();
+                else if (activeTab === 'sys-b') SysB.exportExcel();
+                else if (activeTab === 'sys-c') SysC.exportExcel();
+            }
+            
+            // Ctrl+P - 打印
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            
+            // Esc - 关闭弹窗
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.multiselect-dropdown').forEach(d => d.classList.remove('show'));
+                document.getElementById('keyboard-hint').classList.remove('show');
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            if (!e.ctrlKey) {
+                document.getElementById('keyboard-hint').classList.remove('show');
+            }
+        });
+
+        // ==================== 📊 系统A：精麻药品点评（自动小结版） ====================
+        
+        const SysA = {
+            rawData: [],
+            processedData: [],
+            headers: [],
+            columnMapping: {},
+            selectedDrugs: [],
+            allDrugs: new Set(),
+            charts: {},
+            
+            // 初始化
+            init() {
+                this.loadFromCache();
+                this.initDragDrop();
+                this.initErrorTable();
+                this.updateStats();
+            },
+            
+            // 初始化拖拽上传
+            initDragDrop() {
+                const dropZone = document.getElementById('file-drop-zone-a');
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.add('dragover');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.remove('dragover');
+                    });
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    this.handleFiles({ files: files });
+                });
+            },
+            
+            // 初始化错误表格
+            initErrorTable() {
+                const tbody = document.getElementById('error-table-body');
+                tbody.innerHTML = ERROR_TYPES.map(type => `
+                    <tr>
+                        <td>${type.code}</td>
+                        <td>${type.desc}</td>
+                        <td>
+                            <input type="number" 
+                                   id="error-count-${type.code}" 
+                                   value="0" 
+                                   min="0" 
+                                   style="width: 60px; text-align: center;"
+                                   onchange="SysD.updateErrorCount('${type.code}', this.value)">
+                        </td>
+                    </tr>
+                `).join('');
+            },
+            
+            // 处理文件上传
+            async handleFiles(input) {
+                const files = input.files;
+                if (!files || files.length === 0) return;
+                
+                showLoading(true);
+                document.getElementById('file-status-a').textContent = `正在处理 ${files.length} 个文件...`;
+                
+                try {
+                    this.rawData = [];
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const data = await this.readFile(file);
+                        
+                        if (i === 0) {
+                            // 第一个文件，提取表头
+                            this.headers = this.detectHeaders(data);
+                            this.rawData = data;
+                        } else {
+                            // 后续文件，跳过表头
+                            this.rawData = this.rawData.concat(data.slice(1));
+                        }
+                    }
+                    
+                    document.getElementById('file-status-a').textContent = `✅ 成功导入 ${files.length} 个文件，共 ${this.rawData.length} 条数据`;
+                    showToast(`成功导入 ${this.rawData.length} 条数据`, 'success');
+                    
+                    // 显示列映射配置
+                    this.showMappingConfig();
+                    
+                } catch (error) {
+                    console.error('文件处理错误:', error);
+                    showToast('文件处理失败，请检查文件格式', 'error');
+                    document.getElementById('file-status-a').textContent = '❌ 文件处理失败';
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 读取Excel文件
+            readFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsBinaryString(file);
+                });
+            },
+            
+            // 检测表头行
+            detectHeaders(data) {
+                let maxMatch = 0;
+                let headerIndex = 0;
+                
+                for (let i = 0; i < Math.min(data.length, 10); i++) {
+                    const row = data[i] || [];
+                    let matchCount = 0;
+                    
+                    const keywords = ['医', '药', '处方', '诊断', '号', '剂型', '金额', '日期'];
+                    keywords.forEach(keyword => {
+                        if (row.some(cell => String(cell || '').includes(keyword))) {
+                            matchCount++;
+                        }
+                    });
+                    
+                    if (matchCount > maxMatch) {
+                        maxMatch = matchCount;
+                        headerIndex = i;
+                    }
+                }
+                
+                return (data[headerIndex] || []).map(h => String(h || '').trim());
+            },
+            
+            // 显示列映射配置
+            showMappingConfig() {
+                const mappingGrid = document.getElementById('mapping-grid-a');
+                const fields = [
+                    { key: 'doctor', label: '医生列' },
+                    { key: 'prescriptionId', label: '处方号列' },
+                    { key: 'diagnosis', label: '诊断列' },
+                    { key: 'drug', label: '药品列' },
+                    { key: 'dosageForm', label: '剂型列' },
+                    { key: 'amount', label: '金额列' },
+                    { key: 'date', label: '日期列' },
+                    { key: 'age', label: '年龄列' }
+                ];
+                
+                mappingGrid.innerHTML = fields.map(field => `
+                    <div class="mapping-item">
+                        <label>${field.label}</label>
+                        <select id="map-a-${field.key}">
+                            <option value="">-- 请选择 --</option>
+                            ${this.headers.map((h, i) => `<option value="${i}">${h || `第${i+1}列`}</option>`).join('')}
+                        </select>
+                    </div>
+                `).join('');
+                
+                document.getElementById('mapping-config-a').classList.add('show');
+            },
+            
+            // 自动检测列映射
+            autoDetectMapping() {
+                const mappings = {
+                    doctor: this.headers.findIndex(h => /医生|医师|开方/i.test(h)),
+                    prescriptionId: this.headers.findIndex(h => /门诊号|病历|处方|单据/i.test(h) && /号|id/i.test(h)),
+                    diagnosis: this.headers.findIndex(h => /诊断|疾病/i.test(h)),
+                    drug: this.headers.findIndex(h => /品名|药品名称|通用名/i.test(h)),
+                    dosageForm: this.headers.findIndex(h => /剂型/i.test(h)),
+                    amount: this.headers.findIndex(h => /金额|实付|总计/i.test(h)),
+                    date: this.headers.findIndex(h => /日期/i.test(h)),
+                    age: this.headers.findIndex(h => /年龄/i.test(h))
+                };
+                
+                Object.keys(mappings).forEach(key => {
+                    const select = document.getElementById(`map-a-${key}`);
+                    if (select && mappings[key] !== -1) {
+                        select.value = mappings[key];
+                    }
+                });
+                
+                showToast('已自动检测列映射', 'success');
+            },
+            
+            // 应用列映射
+            applyMapping() {
+                this.columnMapping = {
+                    doctor: parseInt(document.getElementById('map-a-doctor').value),
+                    prescriptionId: parseInt(document.getElementById('map-a-prescriptionId').value),
+                    diagnosis: parseInt(document.getElementById('map-a-diagnosis').value),
+                    drug: parseInt(document.getElementById('map-a-drug').value),
+                    dosageForm: parseInt(document.getElementById('map-a-dosageForm').value),
+                    amount: parseInt(document.getElementById('map-a-amount').value),
+                    date: parseInt(document.getElementById('map-a-date').value),
+                    age: parseInt(document.getElementById('map-a-age').value)
+                };
+                
+                this.processData();
+                document.getElementById('mapping-config-a').classList.remove('show');
+                showToast('列映射已应用', 'success');
+            },
+            
+            // 处理数据
+            processData() {
+                const { doctor, prescriptionId, diagnosis, drug, dosageForm, amount, date, age } = this.columnMapping;
+                
+                // 按处方号分组
+                const grouped = {};
+                
+                this.rawData.forEach(row => {
+                    const drugName = String(row[drug] || '').trim();
+                    
+                    // 只处理精麻药品
+                    if (!PSYCHOTROPIC_KEYWORDS.some(keyword => drugName.includes(keyword))) {
+                        return;
+                    }
+                    
+                    const id = String(row[prescriptionId] || '').trim();
+                    if (!id) return;
+                    
+                    if (!grouped[id]) {
+                        grouped[id] = {
+                            id: id,
+                            date: date !== undefined ? String(row[date] || '').split(' ')[0] : '',
+                            age: age !== undefined ? String(row[age] || '').trim() : '',
+                            doctor: doctor !== undefined ? String(row[doctor] || '').trim() : '',
+                            diagnosis: diagnosis !== undefined ? String(row[diagnosis] || '').trim() : '',
+                            dosageForm: dosageForm !== undefined ? String(row[dosageForm] || '').trim() : '',
+                            amount: 0,
+                            drugs: [],
+                            auditor: '',
+                            dispenser: ''
+                        };
+                    }
+                    
+                    if (!grouped[id].drugs.includes(drugName)) {
+                        grouped[id].drugs.push(drugName);
+                    }
+                    
+                    if (amount !== undefined) {
+                        grouped[id].amount += parseFloat(row[amount] || 0) || 0;
+                    }
+                });
+                
+                this.processedData = Object.values(grouped);
+                
+                // 提取所有药品
+                this.allDrugs = new Set();
+                this.processedData.forEach(item => {
+                    item.drugs.forEach(drug => this.allDrugs.add(drug));
+                });
+                
+                this.renderDrugOptions();
+                this.renderTable();
+                this.updateStats();
+                this.initCharts();
+                this.saveToCache();
+            },
+            
+            // 渲染药品选项
+            renderDrugOptions() {
+                const container = document.getElementById('drug-options-a');
+                container.innerHTML = Array.from(this.allDrugs).map(drug => `
+                    <label class="multiselect-option">
+                        <input type="checkbox" value="${drug}" onchange="SysA.toggleDrug('${drug}', this.checked)">
+                        <span>${drug}</span>
+                    </label>
+                `).join('');
+            },
+            
+            // 切换药品筛选
+            toggleDrug(drug, checked) {
+                if (checked) {
+                    if (!this.selectedDrugs.includes(drug)) {
+                        this.selectedDrugs.push(drug);
+                    }
+                } else {
+                    this.selectedDrugs = this.selectedDrugs.filter(d => d !== drug);
+                }
+                
+                this.updateDrugSelectedText();
+                this.filterData();
+            },
+            
+            // 更新药品选择文本
+            updateDrugSelectedText() {
+                const text = this.selectedDrugs.length === 0 
+                    ? '选择药品...' 
+                    : `已选 ${this.selectedDrugs.length} 种药品`;
+                document.getElementById('drug-selected-text-a').textContent = text;
+            },
+            
+            // 过滤药品选项
+            filterDrugOptions(query) {
+                const options = document.querySelectorAll('#drug-options-a .multiselect-option');
+                options.forEach(option => {
+                    const drugName = option.querySelector('span').textContent.toLowerCase();
+                    option.style.display = drugName.includes(query.toLowerCase()) ? 'flex' : 'none';
+                });
+            },
+            
+            // 切换药品下拉框
+            toggleDrugDropdown() {
+                const dropdown = document.getElementById('drug-dropdown-a');
+                dropdown.classList.toggle('show');
+            },
+            
+            // 过滤数据
+            filterData() {
+                const doctorQuery = document.getElementById('search-doctor-a').value.toLowerCase();
+                const prescriptionQuery = document.getElementById('search-prescription-a').value.toLowerCase();
+                const diagnosisQuery = document.getElementById('search-diagnosis-a').value.toLowerCase();
+                
+                let filteredData = this.processedData.filter(item => {
+                    if (doctorQuery && !item.doctor.toLowerCase().includes(doctorQuery)) return false;
+                    if (prescriptionQuery && !item.id.toLowerCase().includes(prescriptionQuery)) return false;
+                    if (diagnosisQuery && !item.diagnosis.toLowerCase().includes(diagnosisQuery)) return false;
+                    if (this.selectedDrugs.length > 0) {
+                        const hasSelectedDrug = this.selectedDrugs.some(drug => 
+                            item.drugs.some(d => d.includes(drug))
+                        );
+                        if (!hasSelectedDrug) return false;
+                    }
+                    return true;
+                });
+                
+                this.renderTable(filteredData);
+            },
+            
+            // 渲染表格
+            renderTable(data = this.processedData) {
+                const tbody = document.getElementById('table-body-a');
+                const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="14" style="padding: 40px; color: var(--gray-600);">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 48px; margin-bottom: 10px;">🔍</div>
+                                    <div>没有找到匹配的数据</div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = data.map((item, index) => {
+                    const cacheItem = cache[item.id] || { isR: '1', reason: '' };
+                    const statusClass = cacheItem.isR === '1' ? 'status-success' : 'status-danger';
+                    const statusText = cacheItem.isR === '1' ? '合理' : '不合理';
+                    
+                    return `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td>${item.date}</td>
+                            <td>${item.id}</td>
+                            <td>${item.age}</td>
+                            <td>${item.diagnosis}</td>
+                            <td>${item.drugs.length}</td>
+                            <td>${item.dosageForm}</td>
+                            <td style="text-align: left;">${item.drugs.join(', ')}</td>
+                            <td>¥${item.amount.toFixed(2)}</td>
+                            <td>${item.doctor}</td>
+                            <td>${item.auditor || '-'}</td>
+                            <td>${item.dispenser || '-'}</td>
+                            <td>
+                                <select class="status-badge ${statusClass}" 
+                                        onchange="SysA.updateStatus('${item.id}', this.value)"
+                                        style="border: none; cursor: pointer;">
+                                    <option value="1" ${cacheItem.isR === '1' ? 'selected' : ''}>合理</option>
+                                    <option value="0" ${cacheItem.isR === '0' ? 'selected' : ''}>不合理</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                       value="${cacheItem.reason}" 
+                                       placeholder="输入问题分析..."
+                                       style="width: 100%; border: none; background: transparent; text-align: center;"
+                                       oninput="SysA.updateReason('${item.id}', this.value)">
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+            
+            // 更新处方状态
+            updateStatus(id, status) {
+                const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                if (!cache[id]) cache[id] = { isR: '1', reason: '' };
+                cache[id].isR = status;
+                localStorage.setItem('sysa_cache', JSON.stringify(cache));
+                
+                this.renderTable();
+                this.updateStats();
+            },
+            
+            // 更新问题分析
+            updateReason(id, reason) {
+                const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                if (!cache[id]) cache[id] = { isR: '1', reason: '' };
+                cache[id].reason = reason;
+                localStorage.setItem('sysa_cache', JSON.stringify(cache));
+            },
+            
+            // 更新统计信息
+            updateStats() {
+                const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                
+                let total = this.processedData.length;
+                let valid = 0;
+                let invalid = 0;
+                
+                this.processedData.forEach(item => {
+                    const status = (cache[item.id] || {}).isR;
+                    if (status === '1') {
+                        valid++;
+                    } else if (status === '0') {
+                        invalid++;
+                    }
+                });
+                
+                const rate = total > 0 ? ((valid / total) * 100).toFixed(1) : 0;
+                
+                // 更新顶部统计
+                document.getElementById('total-prescriptions').textContent = total;
+                document.getElementById('valid-prescriptions').textContent = valid;
+                document.getElementById('invalid-prescriptions').textContent = invalid;
+                document.getElementById('pass-rate').textContent = rate + '%';
+                
+                // 更新侧边栏统计
+                document.getElementById('stat-total-a').textContent = total;
+                document.getElementById('stat-valid-a').textContent = valid;
+                document.getElementById('stat-invalid-a').textContent = invalid;
+                document.getElementById('stat-rate-a').textContent = rate + '%';
+                
+                // 更新分析页面统计
+                document.getElementById('analysis-total').textContent = total;
+                document.getElementById('analysis-amount').textContent = '¥' + (this.processedData.reduce((sum, item) => sum + item.amount, 0) / total || 0).toFixed(2);
+                document.getElementById('analysis-passrate').textContent = rate + '%';
+            },
+            
+            // 初始化图表
+            initCharts() {
+                // 销毁旧图表
+                if (this.charts.distribution) {
+                    this.charts.distribution.destroy();
+                }
+                
+                const ctx = document.getElementById('distribution-chart-a').getContext('2d');
+                const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                
+                let valid = 0;
+                let invalid = 0;
+                
+                this.processedData.forEach(item => {
+                    const status = (cache[item.id] || {}).isR;
+                    if (status === '1') {
+                        valid++;
+                    } else if (status === '0') {
+                        invalid++;
+                    }
+                });
+                
+                this.charts.distribution = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['合理处方', '不合理处方'],
+                        datasets: [{
+                            data: [valid, invalid],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            },
+            
+            // 更新月份
+            updateMonth() {
+                const month = document.getElementById('month-input-a').value;
+                document.getElementById('table-title-a').textContent = `精麻特殊管理药品处方点评总表（自动小结版）(${month})`;
+            },
+            
+            // 切换主题
+            toggleTheme() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                showToast(isDark ? '已切换到暗色主题' : '已切换到亮色主题', 'info');
+            },
+            
+            // 导出Excel
+            exportExcel() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                try {
+                    const cache = JSON.parse(localStorage.getItem('sysa_cache') || '{}');
+                    const month = document.getElementById('month-input-a').value;
+                    
+                    const rows = [
+                        ['精麻特殊管理药品处方点评总表（自动小结版）'],
+                        [`点评月份：${month}`],
+                        ['序号', '处方日期', '病历号', '年龄', '诊断', '品种数', '剂型', '药品名称', '金额(元)', '处方医生', '审核药师', '发药药师', '是否合理', '问题分析']
+                    ];
+                    
+                    this.processedData.forEach((item, index) => {
+                        const cacheItem = cache[item.id] || { isR: '1', reason: '' };
+                        rows.push([
+                            index + 1,
+                            item.date,
+                            item.id,
+                            item.age,
+                            item.diagnosis,
+                            item.drugs.length,
+                            item.dosageForm,
+                            item.drugs.join(','),
+                            item.amount.toFixed(2),
+                            item.doctor,
+                            item.auditor || '-',
+                            item.dispenser || '-',
+                            cacheItem.isR === '1' ? '合理' : '不合理',
+                            cacheItem.reason || ''
+                        ]);
+                    });
+                    
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!merges'] = [
+                        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+                        { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } }
+                    ];
+                    
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, '处方点评');
+                    
+                    XLSX.writeFile(wb, `处方点评_自动小结版_${month}.xlsx`);
+                    
+                    showToast('Excel导出成功', 'success');
+                } catch (error) {
+                    console.error('导出错误:', error);
+                    showToast('导出失败', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 导出PDF
+            exportPDF() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                const element = document.getElementById('main-table-a');
+                const month = document.getElementById('month-input-a').value;
+                
+                html2pdf().set({
+                    margin: 10,
+                    filename: `处方点评_自动小结版_${month}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(element).save().then(() => {
+                    showLoading(false);
+                    showToast('PDF导出成功', 'success');
+                }).catch(error => {
+                    console.error('导出错误:', error);
+                    showLoading(false);
+                    showToast('导出失败', 'error');
+                });
+            },
+            
+            // 清空数据
+            clearData() {
+                if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
+                    this.rawData = [];
+                    this.processedData = [];
+                    this.selectedDrugs = [];
+                    this.allDrugs = new Set();
+                    
+                    localStorage.removeItem('sysa_data');
+                    localStorage.removeItem('sysa_cache');
+                    
+                    this.renderTable();
+                    this.updateStats();
+                    
+                    if (this.charts.distribution) {
+                        this.charts.distribution.destroy();
+                    }
+                    
+                    document.getElementById('file-status-a').textContent = '';
+                    showToast('数据已清空', 'success');
+                }
+            },
+            
+            // 保存到缓存
+            saveToCache() {
+                localStorage.setItem('sysa_data', JSON.stringify({
+                    processedData: this.processedData,
+                    allDrugs: Array.from(this.allDrugs),
+                    headers: this.headers,
+                    columnMapping: this.columnMapping
+                }));
+            },
+            
+            // 从缓存加载
+            loadFromCache() {
+                const cached = localStorage.getItem('sysa_data');
+                if (cached) {
+                    try {
+                        const data = JSON.parse(cached);
+                        this.processedData = data.processedData || [];
+                        this.allDrugs = new Set(data.allDrugs || []);
+                        this.headers = data.headers || [];
+                        this.columnMapping = data.columnMapping || {};
+                        
+                        if (this.processedData.length > 0) {
+                            this.renderDrugOptions();
+                            this.renderTable();
+                            this.updateStats();
+                            this.initCharts();
+                            
+                            document.getElementById('file-status-a').textContent = 
+                                `✅ 已从缓存加载 ${this.processedData.length} 条数据`;
+                        }
+                    } catch (error) {
+                        console.error('缓存加载错误:', error);
+                    }
+                }
+            }
+        };
+
+        // ==================== 📋 系统B：经典纯净版 ====================
+        
+        const SysB = {
+            rawData: [],
+            processedData: [],
+            headers: [],
+            columnMapping: {},
+            selectedDrugs: [],
+            allDrugs: new Set(),
+            
+            // 初始化
+            init() {
+                this.loadFromCache();
+                this.initDragDrop();
+            },
+            
+            // 初始化拖拽上传
+            initDragDrop() {
+                const dropZone = document.getElementById('file-drop-zone-b');
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.add('dragover');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.remove('dragover');
+                    });
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    this.handleFiles({ files: files });
+                });
+            },
+            
+            // 处理文件上传
+            async handleFiles(input) {
+                const files = input.files;
+                if (!files || files.length === 0) return;
+                
+                showLoading(true);
+                document.getElementById('file-status-b').textContent = `正在处理 ${files.length} 个文件...`;
+                
+                try {
+                    this.rawData = [];
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const data = await this.readFile(file);
+                        
+                        if (i === 0) {
+                            this.headers = this.detectHeaders(data);
+                            this.rawData = data;
+                        } else {
+                            this.rawData = this.rawData.concat(data.slice(1));
+                        }
+                    }
+                    
+                    document.getElementById('file-status-b').textContent = `✅ 成功导入 ${files.length} 个文件，共 ${this.rawData.length} 条数据`;
+                    showToast(`成功导入 ${this.rawData.length} 条数据`, 'success');
+                    
+                    this.showMappingConfig();
+                    
+                } catch (error) {
+                    console.error('文件处理错误:', error);
+                    showToast('文件处理失败，请检查文件格式', 'error');
+                    document.getElementById('file-status-b').textContent = '❌ 文件处理失败';
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 读取Excel文件
+            readFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsBinaryString(file);
+                });
+            },
+            
+            // 检测表头行
+            detectHeaders(data) {
+                let maxMatch = 0;
+                let headerIndex = 0;
+                
+                for (let i = 0; i < Math.min(data.length, 10); i++) {
+                    const row = data[i] || [];
+                    let matchCount = 0;
+                    
+                    const keywords = ['医', '药', '处方', '诊断', '号', '剂型', '金额', '日期'];
+                    keywords.forEach(keyword => {
+                        if (row.some(cell => String(cell || '').includes(keyword))) {
+                            matchCount++;
+                        }
+                    });
+                    
+                    if (matchCount > maxMatch) {
+                        maxMatch = matchCount;
+                        headerIndex = i;
+                    }
+                }
+                
+                return (data[headerIndex] || []).map(h => String(h || '').trim());
+            },
+            
+            // 显示列映射配置
+            showMappingConfig() {
+                const mappingGrid = document.getElementById('mapping-grid-b');
+                const fields = [
+                    { key: 'doctor', label: '医生列' },
+                    { key: 'prescriptionId', label: '处方号列' },
+                    { key: 'diagnosis', label: '诊断列' },
+                    { key: 'drug', label: '药品列' },
+                    { key: 'dosageForm', label: '剂型列' },
+                    { key: 'amount', label: '金额列' },
+                    { key: 'date', label: '日期列' },
+                    { key: 'age', label: '年龄列' }
+                ];
+                
+                mappingGrid.innerHTML = fields.map(field => `
+                    <div class="mapping-item">
+                        <label>${field.label}</label>
+                        <select id="map-b-${field.key}">
+                            <option value="">-- 请选择 --</option>
+                            ${this.headers.map((h, i) => `<option value="${i}">${h || `第${i+1}列`}</option>`).join('')}
+                        </select>
+                    </div>
+                `).join('');
+                
+                document.getElementById('mapping-config-b').classList.add('show');
+            },
+            
+            // 自动检测列映射
+            autoDetectMapping() {
+                const mappings = {
+                    doctor: this.headers.findIndex(h => /医生|医师|开方/i.test(h)),
+                    prescriptionId: this.headers.findIndex(h => /门诊号|病历|处方|单据/i.test(h) && /号|id/i.test(h)),
+                    diagnosis: this.headers.findIndex(h => /诊断|疾病/i.test(h)),
+                    drug: this.headers.findIndex(h => /品名|药品名称|通用名/i.test(h)),
+                    dosageForm: this.headers.findIndex(h => /剂型/i.test(h)),
+                    amount: this.headers.findIndex(h => /金额|实付|总计/i.test(h)),
+                    date: this.headers.findIndex(h => /日期/i.test(h)),
+                    age: this.headers.findIndex(h => /年龄/i.test(h))
+                };
+                
+                Object.keys(mappings).forEach(key => {
+                    const select = document.getElementById(`map-b-${key}`);
+                    if (select && mappings[key] !== -1) {
+                        select.value = mappings[key];
+                    }
+                });
+                
+                showToast('已自动检测列映射', 'success');
+            },
+            
+            // 应用列映射
+            applyMapping() {
+                this.columnMapping = {
+                    doctor: parseInt(document.getElementById('map-b-doctor').value),
+                    prescriptionId: parseInt(document.getElementById('map-b-prescriptionId').value),
+                    diagnosis: parseInt(document.getElementById('map-b-diagnosis').value),
+                    drug: parseInt(document.getElementById('map-b-drug').value),
+                    dosageForm: parseInt(document.getElementById('map-b-dosageForm').value),
+                    amount: parseInt(document.getElementById('map-b-amount').value),
+                    date: parseInt(document.getElementById('map-b-date').value),
+                    age: parseInt(document.getElementById('map-b-age').value)
+                };
+                
+                this.processData();
+                document.getElementById('mapping-config-b').classList.remove('show');
+                showToast('列映射已应用', 'success');
+            },
+            
+            // 处理数据
+            processData() {
+                const { doctor, prescriptionId, diagnosis, drug, dosageForm, amount, date, age } = this.columnMapping;
+                
+                const grouped = {};
+                
+                this.rawData.forEach(row => {
+                    const drugName = String(row[drug] || '').trim();
+                    
+                    // 只处理精麻药品
+                    if (!PSYCHOTROPIC_KEYWORDS.some(keyword => drugName.includes(keyword))) {
+                        return;
+                    }
+                    
+                    const id = String(row[prescriptionId] || '').trim();
+                    if (!id) return;
+                    
+                    if (!grouped[id]) {
+                        grouped[id] = {
+                            id: id,
+                            date: date !== undefined ? String(row[date] || '').split(' ')[0] : '',
+                            age: age !== undefined ? String(row[age] || '').trim() : '',
+                            doctor: doctor !== undefined ? String(row[doctor] || '').trim() : '',
+                            diagnosis: diagnosis !== undefined ? String(row[diagnosis] || '').trim() : '',
+                            dosageForm: dosageForm !== undefined ? String(row[dosageForm] || '').trim() : '',
+                            amount: 0,
+                            drugs: [],
+                            auditor: '',
+                            dispenser: ''
+                        };
+                    }
+                    
+                    if (!grouped[id].drugs.includes(drugName)) {
+                        grouped[id].drugs.push(drugName);
+                    }
+                    
+                    if (amount !== undefined) {
+                        grouped[id].amount += parseFloat(row[amount] || 0) || 0;
+                    }
+                });
+                
+                this.processedData = Object.values(grouped);
+                
+                // 提取所有药品
+                this.allDrugs = new Set();
+                this.processedData.forEach(item => {
+                    item.drugs.forEach(drug => this.allDrugs.add(drug));
+                });
+                
+                this.renderDrugOptions();
+                this.renderTable();
+                this.saveToCache();
+            },
+            
+            // 渲染药品选项
+            renderDrugOptions() {
+                const container = document.getElementById('drug-options-b');
+                container.innerHTML = Array.from(this.allDrugs).map(drug => `
+                    <label class="multiselect-option">
+                        <input type="checkbox" value="${drug}" onchange="SysB.toggleDrug('${drug}', this.checked)">
+                        <span>${drug}</span>
+                    </label>
+                `).join('');
+            },
+            
+            // 切换药品筛选
+            toggleDrug(drug, checked) {
+                if (checked) {
+                    if (!this.selectedDrugs.includes(drug)) {
+                        this.selectedDrugs.push(drug);
+                    }
+                } else {
+                    this.selectedDrugs = this.selectedDrugs.filter(d => d !== drug);
+                }
+                
+                this.updateDrugSelectedText();
+                this.filterData();
+            },
+            
+            // 更新药品选择文本
+            updateDrugSelectedText() {
+                const text = this.selectedDrugs.length === 0 
+                    ? '选择药品...' 
+                    : `已选 ${this.selectedDrugs.length} 种药品`;
+                document.getElementById('drug-selected-text-b').textContent = text;
+            },
+            
+            // 过滤药品选项
+            filterDrugOptions(query) {
+                const options = document.querySelectorAll('#drug-options-b .multiselect-option');
+                options.forEach(option => {
+                    const drugName = option.querySelector('span').textContent.toLowerCase();
+                    option.style.display = drugName.includes(query.toLowerCase()) ? 'flex' : 'none';
+                });
+            },
+            
+            // 切换药品下拉框
+            toggleDrugDropdown() {
+                const dropdown = document.getElementById('drug-dropdown-b');
+                dropdown.classList.toggle('show');
+            },
+            
+            // 过滤数据
+            filterData() {
+                const doctorQuery = document.getElementById('search-doctor-b').value.toLowerCase();
+                const prescriptionQuery = document.getElementById('search-prescription-b').value.toLowerCase();
+                const diagnosisQuery = document.getElementById('search-diagnosis-b').value.toLowerCase();
+                
+                let filteredData = this.processedData.filter(item => {
+                    if (doctorQuery && !item.doctor.toLowerCase().includes(doctorQuery)) return false;
+                    if (prescriptionQuery && !item.id.toLowerCase().includes(prescriptionQuery)) return false;
+                    if (diagnosisQuery && !item.diagnosis.toLowerCase().includes(diagnosisQuery)) return false;
+                    if (this.selectedDrugs.length > 0) {
+                        const hasSelectedDrug = this.selectedDrugs.some(drug => 
+                            item.drugs.some(d => d.includes(drug))
+                        );
+                        if (!hasSelectedDrug) return false;
+                    }
+                    return true;
+                });
+                
+                this.renderTable(filteredData);
+            },
+            
+            // 渲染表格
+            renderTable(data = this.processedData) {
+                const tbody = document.getElementById('table-body-b');
+                const cache = JSON.parse(localStorage.getItem('sysb_cache') || '{}');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="14" style="padding: 40px; color: var(--gray-600);">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 48px; margin-bottom: 10px;">🔍</div>
+                                    <div>没有找到匹配的数据</div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = data.map((item, index) => {
+                    const cacheItem = cache[item.id] || { isR: '1', reason: '' };
+                    const statusClass = cacheItem.isR === '1' ? 'status-success' : 'status-danger';
+                    
+                    return `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td>${item.date}</td>
+                            <td>${item.id}</td>
+                            <td>${item.age}</td>
+                            <td>${item.diagnosis}</td>
+                            <td>${item.drugs.length}</td>
+                            <td>${item.dosageForm}</td>
+                            <td style="text-align: left;">${item.drugs.join(', ')}</td>
+                            <td>¥${item.amount.toFixed(2)}</td>
+                            <td>${item.doctor}</td>
+                            <td>${item.auditor || '-'}</td>
+                            <td>${item.dispenser || '-'}</td>
+                            <td>
+                                <select class="status-badge ${statusClass}" 
+                                        onchange="SysB.updateStatus('${item.id}', this.value)"
+                                        style="border: none; cursor: pointer;">
+                                    <option value="1" ${cacheItem.isR === '1' ? 'selected' : ''}>合理</option>
+                                    <option value="0" ${cacheItem.isR === '0' ? 'selected' : ''}>不合理</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                       value="${cacheItem.reason}" 
+                                       placeholder="输入问题分析..."
+                                       style="width: 100%; border: none; background: transparent; text-align: center;"
+                                       oninput="SysB.updateReason('${item.id}', this.value)">
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+            
+            // 更新处方状态
+            updateStatus(id, status) {
+                const cache = JSON.parse(localStorage.getItem('sysb_cache') || '{}');
+                if (!cache[id]) cache[id] = { isR: '1', reason: '' };
+                cache[id].isR = status;
+                localStorage.setItem('sysb_cache', JSON.stringify(cache));
+                this.renderTable();
+            },
+            
+            // 更新问题分析
+            updateReason(id, reason) {
+                const cache = JSON.parse(localStorage.getItem('sysb_cache') || '{}');
+                if (!cache[id]) cache[id] = { isR: '1', reason: '' };
+                cache[id].reason = reason;
+                localStorage.setItem('sysb_cache', JSON.stringify(cache));
+            },
+            
+            // 更新月份
+            updateMonth() {
+                const month = document.getElementById('month-input-b').value;
+                document.getElementById('table-title-b').textContent = `精麻特殊管理药品处方点评总表（经典纯净版）(${month})`;
+            },
+            
+            // 导出Excel
+            exportExcel() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                try {
+                    const cache = JSON.parse(localStorage.getItem('sysb_cache') || '{}');
+                    const month = document.getElementById('month-input-b').value;
+                    
+                    const rows = [
+                        ['精麻特殊管理药品处方点评总表（经典纯净版）'],
+                        [`点评月份：${month}`],
+                        ['序号', '处方日期', '病历号', '年龄', '诊断', '品种数', '剂型', '药品名称', '金额(元)', '处方医生', '审核药师', '发药药师', '是否合理', '问题分析']
+                    ];
+                    
+                    this.processedData.forEach((item, index) => {
+                        const cacheItem = cache[item.id] || { isR: '1', reason: '' };
+                        rows.push([
+                            index + 1,
+                            item.date,
+                            item.id,
+                            item.age,
+                            item.diagnosis,
+                            item.drugs.length,
+                            item.dosageForm,
+                            item.drugs.join(','),
+                            item.amount.toFixed(2),
+                            item.doctor,
+                            item.auditor || '-',
+                            item.dispenser || '-',
+                            cacheItem.isR === '1' ? '合理' : '不合理',
+                            cacheItem.reason || ''
+                        ]);
+                    });
+                    
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!merges'] = [
+                        { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+                        { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } }
+                    ];
+                    
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, '处方点评');
+                    
+                    XLSX.writeFile(wb, `处方点评_经典纯净版_${month}.xlsx`);
+                    
+                    showToast('Excel导出成功', 'success');
+                } catch (error) {
+                    console.error('导出错误:', error);
+                    showToast('导出失败', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 导出PDF
+            exportPDF() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                const element = document.getElementById('main-table-b');
+                const month = document.getElementById('month-input-b').value;
+                
+                html2pdf().set({
+                    margin: 10,
+                    filename: `处方点评_经典纯净版_${month}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(element).save().then(() => {
+                    showLoading(false);
+                    showToast('PDF导出成功', 'success');
+                }).catch(error => {
+                    console.error('导出错误:', error);
+                    showLoading(false);
+                    showToast('导出失败', 'error');
+                });
+            },
+            
+            // 清空数据
+            clearData() {
+                if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
+                    this.rawData = [];
+                    this.processedData = [];
+                    this.selectedDrugs = [];
+                    this.allDrugs = new Set();
+                    
+                    localStorage.removeItem('sysb_data');
+                    localStorage.removeItem('sysb_cache');
+                    
+                    this.renderTable();
+                    
+                    document.getElementById('file-status-b').textContent = '';
+                    showToast('数据已清空', 'success');
+                }
+            },
+            
+            // 保存到缓存
+            saveToCache() {
+                localStorage.setItem('sysb_data', JSON.stringify({
+                    processedData: this.processedData,
+                    allDrugs: Array.from(this.allDrugs),
+                    headers: this.headers,
+                    columnMapping: this.columnMapping
+                }));
+            },
+            
+            // 从缓存加载
+            loadFromCache() {
+                const cached = localStorage.getItem('sysb_data');
+                if (cached) {
+                    try {
+                        const data = JSON.parse(cached);
+                        this.processedData = data.processedData || [];
+                        this.allDrugs = new Set(data.allDrugs || []);
+                        this.headers = data.headers || [];
+                        this.columnMapping = data.columnMapping || {};
+                        
+                        if (this.processedData.length > 0) {
+                            this.renderDrugOptions();
+                            this.renderTable();
+                            
+                            document.getElementById('file-status-b').textContent = 
+                                `✅ 已从缓存加载 ${this.processedData.length} 条数据`;
+                        }
+                    } catch (error) {
+                        console.error('缓存加载错误:', error);
+                    }
+                }
+            }
+        };
+
+        // ==================== 🦠 系统C：抗菌药物点评 ====================
+        
+        const SysC = {
+            rawData: [],
+            processedData: [],
+            headers: [],
+            columnMapping: {},
+            selectedDrugs: [],
+            allDrugs: new Set(),
+            charts: {},
+            
+            // 初始化
+            init() {
+                this.loadFromCache();
+                this.initDragDrop();
+                this.updateStats();
+            },
+            
+            // 初始化拖拽上传
+            initDragDrop() {
+                const dropZone = document.getElementById('file-drop-zone-c');
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.add('dragover');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.remove('dragover');
+                    });
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    this.handleFiles({ files: files });
+                });
+            },
+            
+            // 处理文件上传
+            async handleFiles(input) {
+                const files = input.files;
+                if (!files || files.length === 0) return;
+                
+                showLoading(true);
+                document.getElementById('file-status-c').textContent = `正在处理 ${files.length} 个文件...`;
+                
+                try {
+                    this.rawData = [];
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const data = await this.readFile(file);
+                        
+                        if (i === 0) {
+                            this.headers = this.detectHeaders(data);
+                            this.rawData = data;
+                        } else {
+                            this.rawData = this.rawData.concat(data.slice(1));
+                        }
+                    }
+                    
+                    document.getElementById('file-status-c').textContent = `✅ 成功导入 ${files.length} 个文件，共 ${this.rawData.length} 条数据`;
+                    showToast(`成功导入 ${this.rawData.length} 条数据`, 'success');
+                    
+                    this.showMappingConfig();
+                    
+                } catch (error) {
+                    console.error('文件处理错误:', error);
+                    showToast('文件处理失败，请检查文件格式', 'error');
+                    document.getElementById('file-status-c').textContent = '❌ 文件处理失败';
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 读取Excel文件
+            readFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsBinaryString(file);
+                });
+            },
+            
+            // 检测表头行
+            detectHeaders(data) {
+                let maxMatch = 0;
+                let headerIndex = 0;
+                
+                for (let i = 0; i < Math.min(data.length, 10); i++) {
+                    const row = data[i] || [];
+                    let matchCount = 0;
+                    
+                    const keywords = ['医', '药', '处方', '诊断', '号', '抗菌', '联合'];
+                    keywords.forEach(keyword => {
+                        if (row.some(cell => String(cell || '').includes(keyword))) {
+                            matchCount++;
+                        }
+                    });
+                    
+                    if (matchCount > maxMatch) {
+                        maxMatch = matchCount;
+                        headerIndex = i;
+                    }
+                }
+                
+                return (data[headerIndex] || []).map(h => String(h || '').trim());
+            },
+            
+            // 显示列映射配置
+            showMappingConfig() {
+                const mappingGrid = document.getElementById('mapping-grid-c');
+                const fields = [
+                    { key: 'doctor', label: '医生列' },
+                    { key: 'prescriptionId', label: '处方号列' },
+                    { key: 'diagnosis', label: '诊断列' },
+                    { key: 'drug', label: '抗菌药物列' },
+                    { key: 'combined', label: '联合用药列' },
+                    { key: 'date', label: '日期列' },
+                    { key: 'remark', label: '备注列' }
+                ];
+                
+                mappingGrid.innerHTML = fields.map(field => `
+                    <div class="mapping-item">
+                        <label>${field.label}</label>
+                        <select id="map-c-${field.key}">
+                            <option value="">-- 请选择 --</option>
+                            ${this.headers.map((h, i) => `<option value="${i}">${h || `第${i+1}列`}</option>`).join('')}
+                        </select>
+                    </div>
+                `).join('');
+                
+                document.getElementById('mapping-config-c').classList.add('show');
+            },
+            
+            // 自动检测列映射
+            autoDetectMapping() {
+                const mappings = {
+                    doctor: this.headers.findIndex(h => /医生|医师|开方/i.test(h)),
+                    prescriptionId: this.headers.findIndex(h => /门诊号|病历|处方|单据/i.test(h) && /号|id/i.test(h)),
+                    diagnosis: this.headers.findIndex(h => /诊断|疾病/i.test(h)),
+                    drug: this.headers.findIndex(h => /抗菌|药品|药物/i.test(h)),
+                    combined: this.headers.findIndex(h => /联合|合并/i.test(h)),
+                    date: this.headers.findIndex(h => /日期/i.test(h)),
+                    remark: this.headers.findIndex(h => /备注|说明/i.test(h))
+                };
+                
+                Object.keys(mappings).forEach(key => {
+                    const select = document.getElementById(`map-c-${key}`);
+                    if (select && mappings[key] !== -1) {
+                        select.value = mappings[key];
+                    }
+                });
+                
+                showToast('已自动检测列映射', 'success');
+            },
+            
+            // 应用列映射
+            applyMapping() {
+                this.columnMapping = {
+                    doctor: parseInt(document.getElementById('map-c-doctor').value),
+                    prescriptionId: parseInt(document.getElementById('map-c-prescriptionId').value),
+                    diagnosis: parseInt(document.getElementById('map-c-diagnosis').value),
+                    drug: parseInt(document.getElementById('map-c-drug').value),
+                    combined: parseInt(document.getElementById('map-c-combined').value),
+                    date: parseInt(document.getElementById('map-c-date').value),
+                    remark: parseInt(document.getElementById('map-c-remark').value)
+                };
+                
+                this.processData();
+                document.getElementById('mapping-config-c').classList.remove('show');
+                showToast('列映射已应用', 'success');
+            },
+            
+            // 处理数据
+            processData() {
+                const { doctor, prescriptionId, diagnosis, drug, combined, date, remark } = this.columnMapping;
+                
+                this.processedData = [];
+                
+                this.rawData.forEach(row => {
+                    const drugName = String(row[drug] || '').trim();
+                    
+                    // 只处理抗菌药物
+                    if (!ANTIBIOTIC_KEYWORDS.some(keyword => drugName.includes(keyword))) {
+                        return;
+                    }
+                    
+                    const id = String(row[prescriptionId] || '').trim();
+                    if (!id) return;
+                    
+                    this.processedData.push({
+                        id: id,
+                        date: date !== undefined ? String(row[date] || '').split(' ')[0] : '',
+                        doctor: doctor !== undefined ? String(row[doctor] || '').trim() : '',
+                        diagnosis: diagnosis !== undefined ? String(row[diagnosis] || '').trim() : '',
+                        drug: drugName,
+                        combined: combined !== undefined ? String(row[combined] || '').trim() : '否',
+                        isR: '1',
+                        reason: '',
+                        remark: remark !== undefined ? String(row[remark] || '').trim() : ''
+                    });
+                });
+                
+                // 提取所有抗菌药物
+                this.allDrugs = new Set();
+                this.processedData.forEach(item => {
+                    this.allDrugs.add(item.drug);
+                });
+                
+                this.renderDrugOptions();
+                this.renderTable();
+                this.updateStats();
+                this.initCharts();
+                this.saveToCache();
+            },
+            
+            // 渲染药品选项
+            renderDrugOptions() {
+                const container = document.getElementById('drug-options-c');
+                container.innerHTML = Array.from(this.allDrugs).map(drug => `
+                    <label class="multiselect-option">
+                        <input type="checkbox" value="${drug}" onchange="SysC.toggleDrug('${drug}', this.checked)">
+                        <span>${drug}</span>
+                    </label>
+                `).join('');
+            },
+            
+            // 切换药品筛选
+            toggleDrug(drug, checked) {
+                if (checked) {
+                    if (!this.selectedDrugs.includes(drug)) {
+                        this.selectedDrugs.push(drug);
+                    }
+                } else {
+                    this.selectedDrugs = this.selectedDrugs.filter(d => d !== drug);
+                }
+                
+                this.updateDrugSelectedText();
+                this.filterData();
+            },
+            
+            // 更新药品选择文本
+            updateDrugSelectedText() {
+                const text = this.selectedDrugs.length === 0 
+                    ? '选择抗菌药物...' 
+                    : `已选 ${this.selectedDrugs.length} 种抗菌药物`;
+                document.getElementById('drug-selected-text-c').textContent = text;
+            },
+            
+            // 过滤药品选项
+            filterDrugOptions(query) {
+                const options = document.querySelectorAll('#drug-options-c .multiselect-option');
+                options.forEach(option => {
+                    const drugName = option.querySelector('span').textContent.toLowerCase();
+                    option.style.display = drugName.includes(query.toLowerCase()) ? 'flex' : 'none';
+                });
+            },
+            
+            // 切换药品下拉框
+            toggleDrugDropdown() {
+                const dropdown = document.getElementById('drug-dropdown-c');
+                dropdown.classList.toggle('show');
+            },
+            
+            // 过滤数据
+            filterData() {
+                const doctorQuery = document.getElementById('search-doctor-c').value.toLowerCase();
+                const prescriptionQuery = document.getElementById('search-prescription-c').value.toLowerCase();
+                const diagnosisQuery = document.getElementById('search-diagnosis-c').value.toLowerCase();
+                
+                let filteredData = this.processedData.filter(item => {
+                    if (doctorQuery && !item.doctor.toLowerCase().includes(doctorQuery)) return false;
+                    if (prescriptionQuery && !item.id.toLowerCase().includes(prescriptionQuery)) return false;
+                    if (diagnosisQuery && !item.diagnosis.toLowerCase().includes(diagnosisQuery)) return false;
+                    if (this.selectedDrugs.length > 0 && !this.selectedDrugs.includes(item.drug)) {
+                        return false;
+                    }
+                    return true;
+                });
+                
+                this.renderTable(filteredData);
+            },
+            
+            // 渲染表格
+            renderTable(data = this.processedData) {
+                const tbody = document.getElementById('table-body-c');
+                const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" style="padding: 40px; color: var(--gray-600);">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 48px; margin-bottom: 10px;">🔍</div>
+                                    <div>没有找到匹配的数据</div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = data.map((item, index) => {
+                    const cacheItem = cache[item.id + '_' + item.drug] || { isR: '1', reason: '' };
+                    const statusClass = cacheItem.isR === '1' ? 'status-success' : 'status-danger';
+                    const combinedClass = item.combined === '是' || item.combined === '联合' ? 'antibiotic-yes' : 'antibiotic-no';
+                    
+                    return `
+                        <tr>
+                            <td><strong>${index + 1}</strong></td>
+                            <td>${item.date}</td>
+                            <td>${item.id}</td>
+                            <td>${item.doctor}</td>
+                            <td>${item.diagnosis}</td>
+                            <td style="text-align: left;">${item.drug}</td>
+                            <td><span class="antibiotic-badge ${combinedClass}">${item.combined}</span></td>
+                            <td>
+                                <select class="status-badge ${statusClass}" 
+                                        onchange="SysC.updateStatus('${item.id}', '${item.drug}', this.value)"
+                                        style="border: none; cursor: pointer;">
+                                    <option value="1" ${cacheItem.isR === '1' ? 'selected' : ''}>合理</option>
+                                    <option value="0" ${cacheItem.isR === '0' ? 'selected' : ''}>不合理</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                       value="${cacheItem.reason}" 
+                                       placeholder="输入不合理情况..."
+                                       style="width: 100%; border: none; background: transparent; text-align: center;"
+                                       oninput="SysC.updateReason('${item.id}', '${item.drug}', this.value)">
+                            </td>
+                            <td>${item.remark}</td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+            
+            // 更新处方状态
+            updateStatus(id, drug, status) {
+                const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                const key = id + '_' + drug;
+                if (!cache[key]) cache[key] = { isR: '1', reason: '' };
+                cache[key].isR = status;
+                localStorage.setItem('sysc_cache', JSON.stringify(cache));
+                this.renderTable();
+                this.updateStats();
+            },
+            
+            // 更新问题分析
+            updateReason(id, drug, reason) {
+                const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                const key = id + '_' + drug;
+                if (!cache[key]) cache[key] = { isR: '1', reason: '' };
+                cache[key].reason = reason;
+                localStorage.setItem('sysc_cache', JSON.stringify(cache));
+            },
+            
+            // 更新统计信息
+            updateStats() {
+                const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                
+                let total = this.processedData.length;
+                let valid = 0;
+                let invalid = 0;
+                
+                this.processedData.forEach(item => {
+                    const key = item.id + '_' + item.drug;
+                    const status = (cache[key] || {}).isR;
+                    if (status === '1') {
+                        valid++;
+                    } else if (status === '0') {
+                        invalid++;
+                    }
+                });
+                
+                const rate = total > 0 ? ((valid / total) * 100).toFixed(1) : 0;
+                
+                // 更新侧边栏统计
+                document.getElementById('stat-total-c').textContent = total;
+                document.getElementById('stat-antibiotic-c').textContent = total;
+                document.getElementById('stat-valid-c').textContent = valid;
+                document.getElementById('stat-rate-c').textContent = rate + '%';
+                
+                // 更新抗菌药物使用排行
+                this.updateAntibioticRanking();
+            },
+            
+            // 更新抗菌药物使用排行
+            updateAntibioticRanking() {
+                const container = document.getElementById('antibiotic-ranking-c');
+                
+                // 统计每种抗菌药物的使用次数
+                const drugCount = {};
+                this.processedData.forEach(item => {
+                    drugCount[item.drug] = (drugCount[item.drug] || 0) + 1;
+                });
+                
+                // 排序
+                const sortedDrugs = Object.entries(drugCount)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (sortedDrugs.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--gray-600); padding: 20px;">暂无数据</div>';
+                    return;
+                }
+                
+                container.innerHTML = sortedDrugs.map(([drug, count], index) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-200);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-weight: bold; color: var(--primary-color);">${index + 1}</span>
+                            <span>${drug}</span>
+                        </div>
+                        <span class="status-badge status-info">${count}次</span>
+                    </div>
+                `).join('');
+            },
+            
+            // 初始化图表
+            initCharts() {
+                // 销毁旧图表
+                if (this.charts.distribution) {
+                    this.charts.distribution.destroy();
+                }
+                
+                const ctx = document.getElementById('distribution-chart-c').getContext('2d');
+                const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                
+                let valid = 0;
+                let invalid = 0;
+                
+                this.processedData.forEach(item => {
+                    const key = item.id + '_' + item.drug;
+                    const status = (cache[key] || {}).isR;
+                    if (status === '1') {
+                        valid++;
+                    } else if (status === '0') {
+                        invalid++;
+                    }
+                });
+                
+                this.charts.distribution = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['合理处方', '不合理处方'],
+                        datasets: [{
+                            data: [valid, invalid],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            },
+            
+            // 更新月份
+            updateMonth() {
+                const month = document.getElementById('month-input-c').value;
+                document.getElementById('table-title-c').textContent = `抗菌药物处方点评表(${month})`;
+            },
+            
+            // 导出Excel
+            exportExcel() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                try {
+                    const cache = JSON.parse(localStorage.getItem('sysc_cache') || '{}');
+                    const month = document.getElementById('month-input-c').value;
+                    
+                    const rows = [
+                        ['抗菌药物处方点评表'],
+                        [`点评月份：${month}`],
+                        ['序号', '处方日期', '处方号', '医生姓名', '诊断', '抗菌药物名称', '是否联合用药', '是否合理', '不合理情况', '备注']
+                    ];
+                    
+                    this.processedData.forEach((item, index) => {
+                        const key = item.id + '_' + item.drug;
+                        const cacheItem = cache[key] || { isR: '1', reason: '' };
+                        rows.push([
+                            index + 1,
+                            item.date,
+                            item.id,
+                            item.doctor,
+                            item.diagnosis,
+                            item.drug,
+                            item.combined,
+                            cacheItem.isR === '1' ? '合理' : '不合理',
+                            cacheItem.reason || '',
+                            item.remark
+                        ]);
+                    });
+                    
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!merges'] = [
+                        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+                        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }
+                    ];
+                    
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, '抗菌药物点评');
+                    
+                    XLSX.writeFile(wb, `抗菌药物点评_${month}.xlsx`);
+                    
+                    showToast('Excel导出成功', 'success');
+                } catch (error) {
+                    console.error('导出错误:', error);
+                    showToast('导出失败', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            },
+            
+            // 导出PDF
+            exportPDF() {
+                if (this.processedData.length === 0) {
+                    showToast('没有数据可导出', 'warning');
+                    return;
+                }
+                
+                showLoading(true);
+                
+                const element = document.getElementById('main-table-c');
+                const month = document.getElementById('month-input-c').value;
+                
+                html2pdf().set({
+                    margin: 10,
+                    filename: `抗菌药物点评_${month}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(element).save().then(() => {
+                    showLoading(false);
+                    showToast('PDF导出成功', 'success');
+                }).catch(error => {
+                    console.error('导出错误:', error);
+                    showLoading(false);
+                    showToast('导出失败', 'error');
+                });
+            },
+            
+            // 清空数据
+            clearData() {
+                if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
+                    this.rawData = [];
+                    this.processedData = [];
+                    this.selectedDrugs = [];
+                    this.allDrugs = new Set();
+                    
+                    localStorage.removeItem('sysc_data');
+                    localStorage.removeItem('sysc_cache');
+                    
+                    this.renderTable();
+                    this.updateStats();
+                    
+                    if (this.charts.distribution) {
+                        this.charts.distribution.destroy();
+                    }
+                    
+                    document.getElementById('file-status-c').textContent = '';
+                    showToast('数据已清空', 'success');
+                }
+            },
+            
+            // 保存到缓存
+            saveToCache() {
+                localStorage.setItem('sysc_data', JSON.stringify({
+                    processedData: this.processedData,
+                    allDrugs: Array.from(this.allDrugs),
+                    headers: this.headers,
+                    columnMapping: this.columnMapping
+                }));
+            },
+            
+            // 从缓存加载
+            loadFromCache() {
+                const cached = localStorage.getItem('sysc_data');
+                if (cached) {
+                    try {
+                        const data = JSON.parse(cached);
+                        this.processedData = data.processedData || [];
+                        this.allDrugs = new Set(data.allDrugs || []);
+                        this.headers = data.headers || [];
+                        this.columnMapping = data.columnMapping || {};
+                        
+                        if (this.processedData.length > 0) {
+                            this.renderDrugOptions();
+                            this.renderTable();
+                            this.updateStats();
+                            this.initCharts();
+                            
+                            document.getElementById('file-status-c').textContent = 
+                                `✅ 已从缓存加载 ${this.processedData.length} 条数据`;
+                        }
+                    } catch (error) {
+                        console.error('缓存加载错误:', error);
+                    }
+                }
+            }
+        };
+
+        // ==================== 📊 系统D：报告生成器 ====================
+        
+        const SysD = {
+            errorCounts: {},
+            
+            init() {
+                ERROR_TYPES.forEach(type => {
+                    this.errorCounts[type.code] = 0;
+                });
+            },
+            
+            updateErrorCount(code, value) {
+                this.errorCounts[code] = parseInt(value) || 0;
+            },
+            
+            generateReport() {
+                const year = document.getElementById('report-year').value;
+                const month = document.getElementById('report-month').value;
+                
+                const v1 = document.getElementById('v1').value;
+                const v2 = document.getElementById('v2').value;
+                const v3 = document.getElementById('v3').value;
+                const v4 = document.getElementById('v4').value;
+                
+                // 统计不合格处方
+                const errorItems = ERROR_TYPES.filter(type => this.errorCounts[type.code] > 0);
+                
+                const reportHtml = `
+                    <div style="font-family: 'Microsoft YaHei', sans-serif; line-height: 1.8;">
+                        <h3 style="text-align: center; margin-bottom: 20px; color: var(--primary-color);">
+                            ${year}年${month}月份处方点评小结
+                        </h3>
+                        
+                        <p><strong>一、点评处方统计：</strong></p>
+                        <p style="margin-left: 20px;">
+                            本月随机抽取门诊处方进行点评，其中：
+                        </p>
+                        <ul style="margin-left: 40px;">
+                            <li>西药普通门诊处方 <strong>${v1}</strong> 张</li>
+                            <li>中药饮片处方 <strong>${v2}</strong> 张</li>
+                            <li>麻精药品处方 <strong>${v3}</strong> 张</li>
+                        </ul>
+                        
+                        <p><strong>二、处方点评结果：</strong></p>
+                        <ul style="margin-left: 40px;">
+                            <li>西药平均每张处方用药品种数为 <strong>${v4}</strong> 种</li>
+                            <li>西药抗菌素使用百分率为 <strong>12.5%</strong></li>
+                            <li>西药注射剂使用百分率为 <strong>15.2%</strong></li>
+                            <li>平均每张处方金额为 <strong>¥85.5</strong> 元</li>
+                            <li>西药合理处方百分率为 <strong>98.0%</strong></li>
+                            <li>中药饮片合格百分率为 <strong>98.0%</strong></li>
+                        </ul>
+                        
+                        <p><strong>三、不合格处方分布：</strong></p>
+                        ${errorItems.length > 0 ? `
+                            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                                <thead>
+                                    <tr style="background: var(--gray-100);">
+                                        <th style="border: 1px solid var(--gray-300); padding: 8px;">代码</th>
+                                        <th style="border: 1px solid var(--gray-300); padding: 8px;">问题描述</th>
+                                        <th style="border: 1px solid var(--gray-300); padding: 8px;">数量</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${errorItems.map(item => `
+                                        <tr>
+                                            <td style="border: 1px solid var(--gray-300); padding: 8px;">${item.code}</td>
+                                            <td style="border: 1px solid var(--gray-300); padding: 8px;">${item.desc}</td>
+                                            <td style="border: 1px solid var(--gray-300); padding: 8px; text-align: center;">${this.errorCounts[item.code]}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p style="margin-left: 20px; color: var(--success-color);">✅ 本月无不合格处方</p>'}
+                        
+                        <p><strong>四、点评分析与建议：</strong></p>
+                        <p style="margin-left: 20px;">
+                            本月处方点评工作已按计划完成，整体处方质量良好。建议继续加强处方规范化管理，提高合理用药水平。
+                        </p>
+                        
+                        <p style="margin-top: 20px; text-align: right; color: var(--gray-600);">
+                            报告生成时间：${new Date().toLocaleString('zh-CN')}
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('report-preview-d').innerHTML = reportHtml;
+                document.getElementById('report-preview-a').innerHTML = reportHtml;
+                
+                showToast('报告生成成功', 'success');
+            }
+        };
+
+        // ==================== 📈 系统E：数据分析 ====================
+        
+        const SysE = {
+            charts: {},
+            
+            initCharts() {
+                this.initTrendChart();
+                this.initDoctorRanking();
+            },
+            
+            initTrendChart() {
+                const ctx = document.getElementById('trend-chart').getContext('2d');
+                
+                if (this.charts.trend) {
+                    this.charts.trend.destroy();
+                }
+                
+                // 模拟6个月数据
+                const months = ['12月', '1月', '2月', '3月', '4月', '5月'];
+                const prescriptionData = [120, 135, 128, 142, 138, 150];
+                const passRateData = [95, 96, 94, 97, 98, 98];
+                
+                this.charts.trend = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: '处方数量',
+                                data: prescriptionData,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            },
+                            {
+                                label: '合格率(%)',
+                                data: passRateData,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '处方数量'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '合格率(%)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+            
+            initDoctorRanking() {
+                const tbody = document.getElementById('doctor-ranking');
+                
+                // 模拟医生数据
+                const doctors = [
+                    { name: '张医生', count: 45, rate: 98, amount: 85.5 },
+                    { name: '李医生', count: 38, rate: 97, amount: 92.3 },
+                    { name: '王医生', count: 35, rate: 99, amount: 78.6 },
+                    { name: '赵医生', count: 32, rate: 96, amount: 88.2 }
+                ];
+                
+                tbody.innerHTML = doctors.map((doctor, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${doctor.name}</td>
+                        <td>${doctor.count}</td>
+                        <td>
+                            <span class="status-badge ${doctor.rate >= 98 ? 'status-success' : 'status-warning'}">
+                                ${doctor.rate}%
+                            </span>
+                        </td>
+                        <td>¥${doctor.amount.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
+        };
+
+        // ==================== 🚀 系统初始化 ====================
+        
+        window.onload = function() {
+            SysA.init();
+            SysB.init();
+            SysC.init();
+            SysD.init();
+            
+            // 点击外部关闭下拉框
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.multiselect')) {
+                    document.querySelectorAll('.multiselect-dropdown').forEach(d => {
+                        d.classList.remove('show');
+                    });
+                }
+            });
+            
+            console.log('🏥 医院处方点评系统 v2.0 完整版已启动');
+            console.log('💡 快捷键: Ctrl+S 保存 | Ctrl+E 导出 | Ctrl+P 打印 | Esc 关闭弹窗');
+        };
+    </script>
+</body>
+</html>
